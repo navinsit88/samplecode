@@ -24,5 +24,16 @@ fs.writeFile('event.json', jsonString, 'utf8', (err) => {
     console.error('Error writing to file:', err);
   } else {
     console.log('Data successfully saved to event.json');
+
+    exec('aws events put-events --entries file://event.json', (error, stdout, stderr) => {
+      if (error) {
+        console.error('Error executing AWS CLI command:', error);
+      } else {
+        console.log('AWS CLI command output:', stdout);
+        if (stderr) {
+          console.error('AWS CLI command error output:', stderr);
+        }
+      }
+    }); 
   }
 });
