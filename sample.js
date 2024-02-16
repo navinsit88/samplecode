@@ -1,39 +1,47 @@
-const fs = require('fs'); // Import the File System module
+const fs = require('fs');
 
-const data = [];
+const numObjects = 10; // Number of objects per file
+const numFiles = 10; // Number of files to generate
 
-for (let i = 1; i <= 100; i++) {
-  // Generate a random value (true for "abcd", false for "efgh")
-  const isAbcd = Math.random() >= 0.5;
+function generateUniqueIds(count) {
+  const usedIds = new Set();
+  const ids = [];
+  while (ids.length < count) {
+    let id = Math.floor(Math.random() * 10000); // Generate random ID
+    if (!usedIds.has(id)) {
+      usedIds.add(id);
+      ids.push(id);
+    }
+  }
+  return ids;
+}
 
-  data.push({
-    DetailType: "My Awesome Event Name",
-    Detail: `{"id": ${i}, "value": "${isAbcd ? "abcd" : "efgh"}"}`,
-    EventBusName: "my-custom-event-bus",
-    Resources: [],
-    Source: "my-service-as-source",
+for (let i = 1; i <= numFiles; i++) {
+  const ids = generateUniqueIds(numObjects); // Generate unique IDs for this file
+  const data = [];
+
+  for (let j = 0; j < numObjects; j++) {
+    const isAbcd = Math.random() >= 0.5;
+    data.push({
+      id: ids[j], // Use unique ID from generated list
+      DetailType: "My Awesome Event Name",
+      Detail: `{"value": "${isAbcd ? "abcd" : "efgh"}"}`,
+      EventBusName: "my-custom-event-bus",
+      Resources: [],
+      Source: "my-service-as-source",
+    });
+  }
+
+  const fileName = `output/file-${i}.json`;
+  const jsonString = JSON.stringify(data, null, 2);
+
+  fs.writeFile(fileName, jsonString, (err) => {
+    if (err) {
+      console.error('Error writing to file:', err);
+    } else {
+      console.log(`File saved: ${fileName}`);
+    }
   });
 }
 
-// Convert data to JSON string
-const jsonString = JSON.stringify(data);
-
-// Write JSON string to file
-fs.writeFile('event.json', jsonString, 'utf8', (err) => {
-  if (err) {
-    console.error('Error writing to file:', err);
-  } else {
-    console.log('Data successfully saved to event.json');
-
-    exec('aws events put-events --entries file://event.json', (error, stdout, stderr) => {
-      if (error) {
-        console.error('Error executing AWS CLI command:', error);
-      } else {
-        console.log('AWS CLI command output:', stdout);
-        if (stderr) {
-          console.error('AWS CLI command error output:', stderr);
-        }
-      }
-    }); 
-  }
-});
+console.log("Data successfully generated and written to separate files!");
