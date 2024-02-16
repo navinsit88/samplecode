@@ -1,47 +1,35 @@
 const fs = require('fs');
+const { exec } = require('child_process');
 
-const numObjects = 10; // Number of objects per file
-const numFiles = 10; // Number of files to generate
-
-function generateUniqueIds(count) {
-  const usedIds = new Set();
-  const ids = [];
-  while (ids.length < count) {
-    let id = Math.floor(Math.random() * 10000); // Generate random ID
-    if (!usedIds.has(id)) {
-      usedIds.add(id);
-      ids.push(id);
-    }
-  }
-  return ids;
-}
+const outputDir = "output";
+const numFiles = 10;
 
 for (let i = 1; i <= numFiles; i++) {
-  const ids = generateUniqueIds(numObjects); // Generate unique IDs for this file
-  const data = [];
+  const fileName = `${outputDir}/file-${i}.json`;
 
-  for (let j = 0; j < numObjects; j++) {
-    const isAbcd = Math.random() >= 0.5;
-    data.push({
-      id: ids[j], // Use unique ID from generated list
-      DetailType: "My Awesome Event Name",
-      Detail: `{"value": "${isAbcd ? "abcd" : "efgh"}"}`,
-      EventBusName: "my-custom-event-bus",
-      Resources: [],
-      Source: "my-service-as-source",
-    });
-  }
-
-  const fileName = `output/file-${i}.json`;
-  const jsonString = JSON.stringify(data, null, 2);
-
-  fs.writeFile(fileName, jsonString, (err) => {
+  fs.readFile(fileName, 'utf8', (err, data) => {
     if (err) {
-      console.error('Error writing to file:', err);
+      console.error('Error reading file:', err);
     } else {
-      console.log(`File saved: ${fileName}`);
+      const jsonData = JSON.parse(data); // Parse JSON data
+      const entryString = `--entries file://${fileName}`;
+
+      const command = `aws events put-events ${entryString}`;
+
+      // Execute the AWS CLI command
+      exec(command, (error, stdout, stderr) => {
+        if (error) {
+          console.error('Error executing AWS CLI command:', error);
+        } else {
+          console.log(`File processed: ${fileName}`);
+          console.log('AWS CLI command output:', stdout);
+          if (stderr) {
+            console.error('AWS CLI command error output:', stderr);
+          }
+        }
+      });
     }
   });
 }
 
-console.log("Data successfully generated and written to separate files!");
+console.log("Processing files and executing AWS CLI commands...");
