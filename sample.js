@@ -1,35 +1,47 @@
-const fs = require('fs');
-const { exec } = require('child_process');
+const fs = require('fs'); // Import file system module
+const uuidv4 = require('uuid/v4');
 
-const outputDir = "output";
-const numFiles = 10;
+function generateSampleJsonArray(numObjects = 1) {
+  const sampleJsonArray = [];
 
-for (let i = 1; i <= numFiles; i++) {
-  const fileName = `${outputDir}/file-${i}.json`;
+  for (let i = 0; i < numObjects; i++) {
+    const eventId = uuidv4(); // Generate unique eventId
 
-  fs.readFile(fileName, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading file:', err);
-    } else {
-      const jsonData = JSON.parse(data); // Parse JSON data
-      const entryString = `--entries file://${fileName}`;
-
-      const command = `aws events put-events ${entryString}`;
-
-      // Execute the AWS CLI command
-      exec(command, (error, stdout, stderr) => {
-        if (error) {
-          console.error('Error executing AWS CLI command:', error);
-        } else {
-          console.log(`File processed: ${fileName}`);
-          console.log('AWS CLI command output:', stdout);
-          if (stderr) {
-            console.error('AWS CLI command error output:', stderr);
+    const sampleObject = {
+      eventId,
+      eventAction: "ScheduleEvent",
+      scheduledInMin: "1",
+      outboundChannelAdapter: {
+        eventType: "string",
+        channels: [
+          {
+            channelType: "SNS",
+            channelName: "string"
           }
-        }
-      });
-    }
-  });
+        ],
+        referenceData: [
+          {
+            referenceDataKey: "string",
+            referenceDataValue: "string"
+          }
+        ]
+      }
+    };
+
+    sampleJsonArray.push(sampleObject);
+  }
+
+  return sampleJsonArray;
 }
 
-console.log("Processing files and executing AWS CLI commands...");
+// Generate the array
+const highlightedObjects = generateSampleJsonArray(5);
+
+// Write the array to a JSON file
+try {
+  const jsonString = JSON.stringify(highlightedObjects, null, 2); // Pretty-print for readability
+  fs.writeFileSync('messages.json', jsonString);
+  console.log('Successfully wrote messages.json');
+} catch (error) {
+  console.error('Error writing messages.json:', error);
+}
